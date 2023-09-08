@@ -1,11 +1,20 @@
 export class Shader {
+  gl: WebGLRenderingContext;
   program: WebGLProgram;
+
+  // uniform variables
+  uProjMat: WebGLUniformLocation | null;
+  // uModelViewMat: WebGLUniformLocation | null;
+
+  // vertex attributes
+  aPosition: number;
 
   constructor(
     gl: WebGLRenderingContext,
     vertexShaderSource: string,
     fragmentShaderSource: string
   ) {
+    this.gl = gl;
     const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
     const fragmentShader = createShader(
       gl,
@@ -14,6 +23,11 @@ export class Shader {
     );
 
     this.program = createProgram(gl, vertexShader, fragmentShader);
+
+    this.uProjMat = this.gl.getUniformLocation(this.program, "uProjMat");
+    // this.uModelViewMat = this.gl.getUniformLocation(this.program, "uModelViewMat");
+
+    this.aPosition = this.gl.getAttribLocation(this.program, "aPosition");
   }
 
   static async load(
@@ -25,6 +39,14 @@ export class Shader {
     const fragmentShaderSource = await loadShader(fragmentShaderUrl);
     return new Shader(gl, vertexShaderSource, fragmentShaderSource);
   }
+
+  sendProjMat(projMat: Float32Array) {
+    this.gl.uniformMatrix4fv(this.uProjMat, false, projMat);
+  }
+
+  // sendModelViewMat(modelViewMat: Float32Array) {
+  //   this.gl.uniformMatrix4fv(this.uModelViewMat, false, modelViewMat);
+  // }
 }
 
 async function loadShader(url: string): Promise<string> {

@@ -1,3 +1,5 @@
+import { Geometry } from "./geometry";
+import { Mat4 } from "./math/matrix";
 import { Shader } from "./shader";
 
 main().catch((e) => console.error(e));
@@ -24,20 +26,17 @@ async function main() {
     "/shaders/frag.glsl"
   );
 
-  const positionAttributeLocation = gl.getAttribLocation(
-    shader.program,
-    "aPos"
-  );
+  const cube = initCube(gl);
 
-  // Loading Data to GPU
-  // create buffer (empty)
-  const positionBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+  const geometry = [cube];
+  drawScene(gl, shader, geometry);
+}
 
-  // bind buffer data to positionBuffer
-  const positions = generateCube();
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-
+function drawScene(
+  gl: WebGLRenderingContext,
+  shader: Shader,
+  geometry: Geometry[]
+) {
   // Rendering
   // set clear color
   gl.clearColor(0.0, 0.0, 0.0, 0.0);
@@ -46,36 +45,19 @@ async function main() {
   // set to screen space
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
-
   gl.useProgram(shader.program);
 
-  // use buffer loaded before
-  gl.enableVertexAttribArray(positionAttributeLocation);
-  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+  geometry.forEach((g) => {
+    g.draw(shader);
+  });
 
-  const size = 3;
-  const type = gl.FLOAT;
-  const normalize = false;
-  const stride = 0; // move by size * sizeof(type)
-  const offset = 0;
-  gl.vertexAttribPointer(
-    positionAttributeLocation,
-    size,
-    type,
-    normalize,
-    stride,
-    offset
-  );
-
-  const primitiveType = gl.TRIANGLES;
-  // const offset = 0;
-  const count = positions.length;
-  gl.drawArrays(primitiveType, offset, count);
+  const projMat = createProjMat();
+  shader.sendProjMat(projMat);
 }
 
-function generateCube() {
+function initCube(gl: WebGLRenderingContext) {
   // prettier-ignore
-  return [
+  const positions = new Float32Array([
     -0.5, -0.5, -0.5,
      0.5, -0.5, -0.5,
     -0.5,  0.5, -0.5,
@@ -117,5 +99,11 @@ function generateCube() {
       0.5,  0.5,  0.5,
      -0.5,  0.5, -0.5,
      -0.5,  0.5,  0.5,
-  ];
+  ]);
+
+  return new Geometry(gl, positions);
+}
+
+function createProjMat() {
+  return Mat4.identity();
 }
